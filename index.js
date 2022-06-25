@@ -1,16 +1,17 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import poolPg from './connect/pg.js';
-import poolMysql from './connect/mysql.js'
-import poolMssql from './connect/mssql.js'
+// import poolMssql from './connect/mssql.js'
+import routePg from './routes/pg/index.js'
+import routeMysql from './routes/mysql/index.js'
+import routeMssql from './routes/mssql/index.js'
 
 // General configuration
 dotenv.config()
 const app = express();
-app.use(cors(
-    { origin: process.env.ORIGIN_CONNECTED, credentials: true }
-));
+app.use(express.json({ limit: '30mb' }));
+app.use(express.urlencoded({ extended: true, limit: '30mb' }));
+app.use(cors({ origin: process.env.ORIGIN_CONNECTED, credentials: true }));
 
 app.get('/', (req, res) => {
     res.json({
@@ -20,36 +21,9 @@ app.get('/', (req, res) => {
     })
 })
 
-app.get('/postgresql', async (req, res) => {
-    poolPg.query(
-        `SELECT * FROM public."user"`,
-        (err, result) => {
-            if (!err) res.json(result.rows)
-
-            else res.json(err.message)
-        }
-    );
-})
-
-app.get('/mysql', async (req, res) => {
-    poolMysql.query(
-        `SELECT * FROM users`,
-        (err, rows, fields) => {
-            if (!err) res.json(rows)
-            else res.json(err.message)
-        }
-    );
-})
-
-app.get('/mssql', async (req, res) => {
-    poolMssql.query(
-        `SELECT * FROM student`,
-        (err, result) => {
-            if (!err) res.json(result.recordset)
-            else res.json(err.message)
-        }
-    );
-})
+routePg('/postgresql', app)
+routeMysql('/mysql', app)
+routeMssql('/mssql', app)
 
 // run server
 const port = process.env.PORT
